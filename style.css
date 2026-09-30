@@ -1,0 +1,131 @@
+/* Map Wager: casino theme (green felt, gold, poker chips) over the shared styles. */
+:root {
+  --felt: #0e5a3a;
+  --felt-dark: #083a25;
+  --gold: #d4af37;
+  --paper: #0b3322;
+  --paper-2: #134a31;
+  --ink: #f5ecd0;
+  --muted: #b9c7b4;
+  --forest: #083a25;
+  --orange: #d4af37;  /* guess -> answer line */
+  --guess: #e23b3b;   /* red chip */
+  --answer: #d4af37;
+  --shadow: 0 3px 10px rgba(0, 0, 0, .45);
+  --display: "Playfair Display", Georgia, serif;
+}
+body { background: #06140d; color: var(--ink); }
+
+header {
+  background: radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-dark) 100%);
+  border-bottom: 3px solid var(--gold);
+  color: var(--ink);
+}
+h1 { font: 900 1.6rem/1 var(--display); text-transform: none; letter-spacing: .01em; }
+h1 span { color: var(--gold); font-style: italic; }
+.link-btn { font-family: "Work Sans", sans-serif; font-weight: 600; }
+
+#top { gap: 8px; }
+#bank {
+  display: flex; align-items: center; gap: 14px;
+  background: rgba(6, 20, 13, .85);
+  border: 2px solid var(--gold); border-radius: 999px;
+  padding: 4px 6px 4px 8px;
+  pointer-events: auto;
+}
+.bank-chips { display: flex; align-items: center; gap: 6px; }
+.bank-chips b { font: 900 1.35rem var(--display); color: var(--gold); font-variant-numeric: tabular-nums; }
+.bank-chips.up b { animation: flash-up .8s; }
+.bank-chips.down b { animation: flash-down .8s; }
+@keyframes flash-up { 0% { color: #7CFC9A; transform: scale(1.25); } 100% { color: var(--gold); transform: none; } }
+@keyframes flash-down { 0% { color: #ff6b6b; transform: scale(.85); } 100% { color: var(--gold); transform: none; } }
+.chip-icon {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--gold);
+  border: 3px dashed #fff8dc;
+  box-shadow: 0 0 0 2px var(--gold);
+}
+#round-label { font: 600 .75rem "Work Sans", sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+#cashout-btn {
+  background: var(--gold); color: #1a1405; opacity: 1;
+  border-radius: 999px; padding: 4px 12px; font-size: .75rem; letter-spacing: .08em;
+}
+
+#prompt {
+  background: radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-dark) 100%);
+  color: var(--ink);
+  border: 2px solid var(--gold); border-radius: 14px;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+}
+#prompt-label { color: var(--gold); font-family: "Work Sans", sans-serif; font-weight: 600; }
+#prompt-name { font: 900 1.7rem/1.15 var(--display); text-transform: none; letter-spacing: 0; }
+#line { font: 600 .9rem "Work Sans", sans-serif; color: var(--muted); margin-top: 2px; }
+#line b { color: var(--gold); }
+
+#betbox {
+  background: rgba(6, 20, 13, .85);
+  border: 2px solid var(--gold); border-radius: 14px;
+  padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 6px; align-items: center;
+}
+#chip-buttons { display: flex; gap: 6px; }
+button.chip {
+  min-width: 0; width: 50px; height: 50px; padding: 0;
+  border-radius: 50%;
+  font: 700 .8rem "Work Sans", sans-serif; letter-spacing: 0; text-transform: none;
+  color: #fff;
+  border: 4px dashed rgba(255, 255, 255, .85);
+  box-shadow: 0 0 0 3px var(--c), 0 3px 6px rgba(0, 0, 0, .5);
+  background: var(--c);
+}
+button.chip[data-add="10"] { --c: #2f6fd0; }
+button.chip[data-add="50"] { --c: #e23b3b; }
+button.chip[data-add="100"] { --c: #222; }
+button.chip[data-add="500"] { --c: #7b3fb5; }
+button.chip.allin { --c: #b8901f; font-size: .66rem; line-height: 1; }
+#bet-row { display: flex; gap: 12px; align-items: center; font: 500 .9rem "Work Sans", sans-serif; color: var(--muted); }
+#bet-row b { color: var(--gold); font-variant-numeric: tabular-nums; }
+#clear-btn { font-size: .75rem; }
+
+button { background: var(--gold); color: #1a1405; border-radius: 999px; font-family: "Work Sans", sans-serif; font-weight: 700; letter-spacing: .06em; }
+button:disabled { opacity: .35; cursor: default; }
+#result {
+  background: rgba(6, 20, 13, .9); color: var(--ink);
+  border: 2px solid var(--gold); border-radius: 999px;
+  font-family: "Work Sans", sans-serif; text-transform: none; letter-spacing: 0;
+}
+#result b { color: var(--gold); }
+#result .win { color: #7CFC9A; font-weight: 800; }
+#result .lose { color: #ff6b6b; font-weight: 800; }
+
+dialog { background: var(--felt-dark); color: var(--ink); border: 3px solid var(--gold); border-radius: 16px; }
+dialog h2 { background: radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-dark) 100%); color: var(--gold); border-bottom: 3px solid var(--gold); font: 900 1.4rem var(--display); text-transform: none; letter-spacing: 0; }
+dialog p { color: var(--muted); }
+dialog p b { color: var(--ink); }
+#final-score { color: var(--gold); font-family: var(--display); font-weight: 900; }
+#over-sub { color: var(--muted); margin-bottom: 14px; }
+#stats b, #stats-all b { color: var(--gold); }
+button.secondary { color: var(--muted); background: none; }
+
+.pin.guess { background: var(--guess); border-color: #fff; }
+.pin.answer { background: var(--answer); border-color: #1a1405; }
+.pin .label { color: #1a1405; background: var(--gold); border-color: #1a1405; font-family: "Work Sans", sans-serif; font-weight: 700; text-transform: none; letter-spacing: 0; }
+
+@media (max-width: 600px) {
+  #prompt-name { font-size: 1.35rem; }
+  button.chip { width: 44px; height: 44px; }
+  #bank { gap: 10px; }
+}
+
+/* Stats (results + Stats dialogs): a tidy grid, 3 across, with room between labels */
+#over #stats, #stats-all {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 10px;
+  margin: 0 20px 18px;
+}
+#over #stats div, #stats-all div {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  min-width: 0;
+  font: 500 .68rem/1.25 "Work Sans", sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+}
+#over #stats b, #stats-all b { font: 900 1.5rem/1.1 var(--display); letter-spacing: 0; color: var(--gold); }

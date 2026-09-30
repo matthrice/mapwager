@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Map Wager</title>
+  <meta property="og:title" content="Map Wager">
+  <meta name="description" content="Bet chips on how well you know the world. 7 places a day.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='6' fill='%23c9a227'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Playfair+Display:wght@700;900&family=Work+Sans:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.css">
+  <link rel="stylesheet" href="base.css?v=1">
+  <link rel="stylesheet" href="pins.css?v=1">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+  <header>
+    <h1>Map <span>Wager</span></h1>
+    <div class="header-right">
+      <button id="stats-btn" class="link-btn">Stats</button>
+      <button id="help-btn" class="link-btn">Help</button>
+    </div>
+  </header>
+
+  <main id="stage">
+    <div id="map"></div>
+    <div id="top">
+      <div id="bank">
+        <div class="bank-chips"><span class="chip-icon"></span><b id="chips">1,000</b></div>
+        <div id="round-label">Round 1</div>
+        <button id="cashout-btn" class="link-btn">Cash out</button>
+      </div>
+      <div id="prompt">
+        <div id="prompt-label">Find</div>
+        <div id="prompt-name">Loading…</div>
+        <div id="line"></div>
+      </div>
+      <div id="panel">
+        <div id="betbox">
+          <div id="chip-buttons">
+            <button class="chip" data-add="10">10</button>
+            <button class="chip" data-add="50">50</button>
+            <button class="chip" data-add="100">100</button>
+            <button class="chip" data-add="500">500</button>
+            <button class="chip allin" data-add="all">All in</button>
+          </div>
+          <div id="bet-row">
+            <span>Bet <b id="bet">0</b> · win <b id="towin">0</b></span>
+            <button id="clear-btn" class="link-btn">Clear</button>
+          </div>
+        </div>
+        <div id="result"></div>
+        <button id="action-btn" style="display:none"></button>
+      </div>
+    </div>
+  </main>
+
+  <dialog id="over">
+    <h2 id="over-title">Game over</h2>
+    <div id="final-score"></div>
+    <div id="over-sub"></div>
+    <div id="stats"></div>
+    <button id="share-btn">Share</button>
+    <form method="dialog"><button class="secondary">View map</button></form>
+  </dialog>
+
+  <dialog id="statsbox">
+    <h2>Your stats</h2>
+    <div id="stats-all"></div>
+    <form method="dialog"><button class="secondary">Close</button></form>
+  </dialog>
+
+  <dialog id="help">
+    <h2>How to play</h2>
+    <p>You start with <b>1,000 chips</b>. Each round names a place anywhere on Earth and sets a <b>line</b>:
+      tap within that distance to win.</p>
+    <p>Stack your chips (10 minimum), then tap the globe. Hit and you win your bet × the payout;
+      miss and you lose it. Tight lines and obscure places pay more.</p>
+    <p><b>7 rounds a day</b>, the same places for everyone. Go broke and you're out; <b>cash out</b> any time
+      to lock in what you have. Try to finish with more than you started.</p>
+    <p>Drag to spin the globe, pinch or scroll to zoom. It's a terrain map with country borders: no labels or roads.</p>
+    <form method="dialog"><button>Deal me in</button></form>
+  </dialog>
+
+  <div id="toast" role="status"></div>
+
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.js"></script>
+  <script src="config.js?v=1"></script>
+  <script src="places.js?v=1"></script>
+  <script src="app.js?v=1"></script>
+</body>
+</html>

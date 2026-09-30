@@ -1,0 +1,256 @@
+/* National Park poster palette */
+:root {
+  --paper: #f3e9d2;
+  --paper-2: #eadcbd;
+  --ink: #1f3329;
+  --muted: #6b705c;
+  --forest: #2f5641;
+  --land: #3f6f52;
+  --land-line: #f3e9d2;
+  --orange: #e2692a;
+  --gold: #f0b93e;
+  --rust: #b8452a;
+  --guess: #e2692a;
+  --answer: #f0b93e;
+  --shadow: 0 3px 0 rgba(31, 51, 41, .25);
+  --display: "Oswald", "Arial Narrow", sans-serif;
+  --body: "Work Sans", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #17241d;
+    --paper-2: #203128;
+    --ink: #f3e9d2;
+    --muted: #a9ad97;
+    --forest: #0f1a14;
+    --land: #3a664c;
+    --land-line: #17241d;
+    --shadow: 0 3px 0 rgba(0, 0, 0, .4);
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.4 var(--body);
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Header: solid forest band with a gold rule, like a park poster's title block */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--forest);
+  color: #f3e9d2;
+  border-bottom: 4px solid var(--gold);
+  z-index: 2;
+}
+h1 {
+  margin: 0;
+  font: 700 1.5rem/1 var(--display);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+h1 span { color: var(--gold); }
+.header-right { display: flex; align-items: center; gap: 14px; }
+#date-label { font: 500 .85rem var(--display); letter-spacing: .08em; text-transform: uppercase; opacity: .75; }
+
+.link-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  min-width: 0;
+  color: inherit;
+  font: 500 .85rem var(--display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  opacity: .85;
+  box-shadow: none;
+  border-radius: 0;
+}
+.link-btn:hover { opacity: 1; }
+a.link-btn { text-decoration: none; }
+
+/* Stage: the map fills everything below the header; UI floats on top */
+#stage { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+#map {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+  overflow: visible;
+  cursor: crosshair;
+  touch-action: none;
+}
+#map.dragging { cursor: grabbing; }
+
+#top {
+  position: absolute; top: 12px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  pointer-events: none;
+  width: max-content; max-width: calc(100% - 32px);
+}
+#rounds { display: flex; gap: 6px; }
+.round-dot {
+  min-width: 40px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 2px solid var(--forest);
+  background: var(--paper);
+  color: var(--forest);
+  font: 600 .8rem var(--display);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+@media (prefers-color-scheme: dark) { .round-dot { border-color: var(--ink); color: var(--ink); } }
+.round-dot.current { background: var(--forest); color: #f3e9d2; border-color: var(--forest); }
+.round-dot.good { background: var(--land); border-color: var(--land); color: #f3e9d2; }
+.round-dot.ok { background: var(--gold); border-color: var(--gold); color: #1f3329; }
+.round-dot.bad { background: var(--rust); border-color: var(--rust); color: #f3e9d2; }
+
+#prompt {
+  text-align: center;
+  background: var(--forest);
+  color: #f3e9d2;
+  padding: 8px 22px 10px;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+#prompt-label { font: 500 .75rem var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+#prompt-name { font: 600 1.7rem/1.1 var(--display); text-transform: uppercase; letter-spacing: .03em; }
+
+#reset-zoom {
+  position: absolute; top: 14px; right: 16px;
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  background: var(--paper);
+  border: 2px solid var(--forest);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+@media (prefers-color-scheme: dark) { #reset-zoom { border-color: var(--ink); } }
+
+#panel {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+#panel > * { pointer-events: auto; }
+#result:empty { display: none; }
+#result {
+  background: var(--paper);
+  border: 2px solid var(--forest);
+  border-radius: 999px;
+  padding: 4px 14px;
+  font: 500 1rem var(--display);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+@media (prefers-color-scheme: dark) { #result { border-color: var(--ink); } }
+#result b { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Map */
+.state { fill: var(--land); stroke: var(--land-line); stroke-width: 1.2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.guess-pin { fill: var(--guess); stroke: #f3e9d2; }
+.answer-pin { fill: var(--answer); stroke: #1f3329; }
+.link-line { stroke: var(--orange); fill: none; }
+.ripple { fill: none; stroke: var(--orange); pointer-events: none; }
+.answer-label {
+  fill: #1f3329;
+  font-family: var(--display);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  paint-order: stroke;
+  stroke: #f3e9d2;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+/* Buttons */
+button {
+  font: 600 1.05rem var(--display);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 28px;
+  background: var(--orange);
+  color: #fff8ea;
+  cursor: pointer;
+  min-width: 200px;
+  box-shadow: var(--shadow);
+}
+button:active { transform: translateY(2px); box-shadow: none; }
+button.secondary { background: none; color: var(--muted); box-shadow: none; }
+
+/* Dialogs */
+dialog {
+  border: 3px solid var(--forest);
+  border-radius: 14px;
+  background: var(--paper);
+  color: var(--ink);
+  width: min(400px, calc(100vw - 32px));
+  padding: 0 0 20px;
+  text-align: center;
+  overflow: hidden;
+}
+@media (prefers-color-scheme: dark) { dialog { border-color: var(--gold); } }
+dialog::backdrop { background: rgba(15, 26, 20, .55); }
+dialog h2 {
+  margin: 0 0 16px;
+  padding: 12px;
+  background: var(--forest);
+  color: #f3e9d2;
+  border-bottom: 4px solid var(--gold);
+  font: 700 1.3rem var(--display);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+dialog > :not(h2) { margin-left: 20px; margin-right: 20px; }
+dialog p { text-align: left; }
+dialog form { margin-top: 8px; }
+#final-score { font: 700 3.5rem/1 var(--display); color: var(--orange); margin-bottom: 16px; font-variant-numeric: tabular-nums; }
+#stats { display: flex; justify-content: space-around; margin-bottom: 18px; }
+#stats div { display: flex; flex-direction: column; font: 500 .75rem var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+#stats b { font: 600 1.4rem var(--display); color: var(--ink); }
+#countdown { margin-top: 12px; color: var(--muted); font-size: .85rem; }
+
+#archive-list { list-style: none; padding: 0; margin: 0 20px; max-height: 55vh; overflow-y: auto; text-align: left; }
+#archive-list a {
+  display: flex; justify-content: space-between;
+  padding: 8px 0;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--paper-2);
+}
+#archive-list .score { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+#toast {
+  position: fixed; left: 50%; bottom: 24px;
+  transform: translateX(-50%);
+  background: var(--forest); color: #f3e9d2;
+  padding: 6px 14px; border-radius: 8px; font-size: .9rem;
+  opacity: 0; transition: opacity .2s; pointer-events: none;
+}
+#toast.show { opacity: 1; }
+
+@media (max-width: 600px) {
+  #date-label { display: none; }
+  .header-right { gap: 9px; }
+  .header-right .link-btn { font-size: .72rem; letter-spacing: .04em; }
+  h1 { font-size: 1.25rem; }
+  #prompt-name { font-size: 1.4rem; }
+  .round-dot { min-width: 36px; }
+  #reset-zoom { top: 10px; right: 10px; padding: 2px 8px; font-size: .75rem; }
+  #reset-zoom::after { content: ""; position: absolute; inset: -12px; } /* bigger tap target */
+  #top { top: 10px; }
+}

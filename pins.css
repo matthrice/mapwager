@@ -1,0 +1,58 @@
+/* ATX Tap: shares ../style.css (poster theme); only map-specific bits here. */
+#map { position: absolute; inset: 0; }
+#map .mapboxgl-canvas-container { cursor: crosshair; }
+#map .mapboxgl-canvas-container:active { cursor: grabbing; }
+
+/* Pins are HTML markers so they can animate with CSS. The .marker wrapper is what
+   Mapbox positions (via transform); the .pin / .ripple inside it animate. */
+.marker { width: 18px; height: 18px; }
+.pin, .ripple { position: relative; box-sizing: border-box; }
+.pin {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 3px solid #f3e9d2;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .4);
+  animation: pop .3s cubic-bezier(.3, 1.8, .5, 1) both;
+}
+.pin.guess { background: var(--guess); }
+.pin.answer { background: var(--answer); border-color: #1f3329; animation-delay: var(--delay, 0s); }
+.pin .label {
+  position: absolute; bottom: 20px; left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font: 600 1rem var(--display);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #1f3329;
+  background: #f3e9d2;
+  border: 2px solid #1f3329;
+  border-radius: 6px;
+  padding: 1px 8px;
+}
+.ripple {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 3px solid var(--orange);
+  pointer-events: none;
+  animation: ripple .65s ease-out forwards;
+}
+@keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes ripple { from { transform: scale(1); opacity: .9; } to { transform: scale(5); opacity: 0; } }
+
+#setup {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px; text-align: center;
+  background: var(--paper);
+}
+#setup div { max-width: 420px; }
+#setup h2 { font: 700 1.4rem var(--display); text-transform: uppercase; letter-spacing: .06em; }
+#setup code { background: var(--paper-2); padding: 1px 5px; border-radius: 4px; }
+
+/* Keep the shared big-button styling off Mapbox's own controls (attribution "i" button). */
+.mapboxgl-ctrl button {
+  min-width: 0; padding: 0; border-radius: 0;
+  box-shadow: none; background-color: transparent;
+  font: inherit; letter-spacing: normal; text-transform: none;
+}
+.mapboxgl-ctrl button:active { transform: none; }
