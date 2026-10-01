@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.css">
   <link rel="stylesheet" href="base.css?v=1">
   <link rel="stylesheet" href="pins.css?v=1">
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
   <header>
@@ -27,15 +27,17 @@
   <main id="stage">
     <div id="map"></div>
     <div id="top">
-      <div id="bank">
-        <div class="bank-chips"><span class="chip-icon"></span><b id="chips">1,000</b></div>
-        <div id="round-label">Round 1</div>
-        <button id="cashout-btn" class="link-btn">Cash out</button>
-      </div>
       <div id="prompt">
-        <div id="prompt-label">Find</div>
-        <div id="prompt-name">Loading…</div>
-        <div id="line"></div>
+        <div class="prompt-main">
+          <div id="prompt-label">Find</div>
+          <div id="prompt-name">Loading…</div>
+          <div id="line"></div>
+        </div>
+        <div id="bank">
+          <div class="bank-chips"><span class="chip-icon"></span><b id="chips">1,000</b></div>
+          <div id="round-label">Round 1</div>
+          <button id="cashout-btn" class="link-btn">Cash out</button>
+        </div>
       </div>
       <div id="panel">
         <div id="betbox">
@@ -89,6 +91,6 @@
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.js"></script>
   <script src="config.js?v=1"></script>
   <script src="places.js?v=1"></script>
-  <script src="app.js?v=1"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

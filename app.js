@@ -199,6 +199,7 @@
     $("bet").textContent = fmt(bet);
     $("towin").textContent = fmt(bet * p.pays);
     $("result").textContent = bet > 0 ? "Tap the globe to play" : "";
+    $("result").classList.toggle("hint", bet > 0);
     setAction("", false, null);
   }
 
@@ -242,6 +243,7 @@
     game.results.push({ name: p.name, bet, hit, delta: Math.round(delta), mi: +mi.toFixed(1), lat: +g.lat.toFixed(4), lon: +g.lon.toFixed(4) });
     phase = "reveal";
     $("betbox").style.display = "none";
+    $("result").classList.remove("hint");
     const over = game.chips <= 0 || round() >= ROUNDS;
     if (over) finish(false);
     saveStore();

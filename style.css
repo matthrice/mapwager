@@ -27,10 +27,9 @@ h1 span { color: var(--gold); font-style: italic; }
 
 #top { gap: 8px; }
 #bank {
-  display: flex; align-items: center; gap: 14px;
-  background: rgba(6, 20, 13, .85);
-  border: 2px solid var(--gold); border-radius: 999px;
-  padding: 4px 6px 4px 8px;
+  display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 2px;
+  padding-left: 14px; margin-left: 4px;
+  border-left: 1px solid rgba(212, 175, 55, .45);
   pointer-events: auto;
 }
 .bank-chips { display: flex; align-items: center; gap: 6px; }
@@ -52,12 +51,16 @@ h1 span { color: var(--gold); font-style: italic; }
 }
 
 #prompt {
+  display: flex; align-items: center; gap: 10px;
+  text-align: left;
   background: radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-dark) 100%);
   color: var(--ink);
   border: 2px solid var(--gold); border-radius: 14px;
   box-shadow: var(--shadow);
   pointer-events: none;
+  width: min(560px, calc(100vw - 24px));
 }
+.prompt-main { flex: 1; min-width: 0; }
 #prompt-label { color: var(--gold); font-family: "Work Sans", sans-serif; font-weight: 600; }
 #prompt-name { font: 900 1.7rem/1.15 var(--display); text-transform: none; letter-spacing: 0; }
 #line { font: 600 .9rem "Work Sans", sans-serif; color: var(--muted); margin-top: 2px; }
@@ -112,20 +115,26 @@ button.secondary { color: var(--muted); background: none; }
 .pin.answer { background: var(--answer); border-color: #1a1405; }
 .pin .label { color: #1a1405; background: var(--gold); border-color: #1a1405; font-family: "Work Sans", sans-serif; font-weight: 700; text-transform: none; letter-spacing: 0; }
 
+/* Phones: keep the overlay to two compact rows so the globe gets the screen. */
 @media (max-width: 600px) {
-  #prompt-name { font-size: 1.35rem; }
-  button.chip { width: 44px; height: 44px; }
-  #bank { gap: 10px; }
+  header { padding: 6px 12px; }
+  h1 { font-size: 1.25rem; }
+  #top { top: 8px; gap: 6px; max-width: calc(100% - 16px); }
+  #prompt { padding: 6px 12px; border-radius: 12px; width: calc(100vw - 16px); }
+  #prompt-label { display: none; }
+  #prompt-name { font-size: 1.2rem; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #line { font-size: .78rem; margin-top: 0; }
+  #bank { padding-left: 10px; }
+  .bank-chips b { font-size: 1.1rem; }
+  .chip-icon { width: 13px; height: 13px; border-width: 2px; }
+  #round-label { font-size: .62rem; letter-spacing: .08em; }
+  #cashout-btn { padding: 2px 8px; font-size: .62rem; }
+  #betbox { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 4px 8px; padding: 5px 8px; border-radius: 12px; }
+  #chip-buttons { gap: 4px; }
+  button.chip { width: 36px; height: 36px; border-width: 3px; font-size: .7rem; box-shadow: 0 0 0 2px var(--c), 0 2px 4px rgba(0, 0, 0, .5); }
+  button.chip.allin { font-size: .55rem; }
+  #bet-row { font-size: .8rem; gap: 8px; }
+  #result { font-size: .85rem; padding: 3px 12px; }
+  #result.hint { display: none; } /* the bet row already says what's on the line */
+  #action-btn { padding: 8px 20px; font-size: .9rem; min-width: 160px; }
 }
-
-/* Stats (results + Stats dialogs): a tidy grid, 3 across, with room between labels */
-#over #stats, #stats-all {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 10px;
-  margin: 0 20px 18px;
-}
-#over #stats div, #stats-all div {
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  min-width: 0;
-  font: 500 .68rem/1.25 "Work Sans", sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
-}
-#over #stats b, #stats-all b { font: 900 1.5rem/1.1 var(--display); letter-spacing: 0; color: var(--gold); }
