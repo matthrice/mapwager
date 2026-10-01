@@ -82,14 +82,14 @@ button.chip {
   box-shadow: 0 0 0 3px var(--c), 0 3px 6px rgba(0, 0, 0, .5);
   background: var(--c);
 }
-button.chip[data-add="10"] { --c: #2f6fd0; }
-button.chip[data-add="50"] { --c: #e23b3b; }
-button.chip[data-add="100"] { --c: #222; }
-button.chip[data-add="500"] { --c: #7b3fb5; }
+button.chip.c1 { --c: #2f6fd0; }
+button.chip.c2 { --c: #e23b3b; }
+button.chip.c3 { --c: #222; }
+button.chip.c4 { --c: #7b3fb5; }
 button.chip.allin { --c: #b8901f; font-size: .66rem; line-height: 1; }
 #bet-row { display: flex; gap: 12px; align-items: center; font: 500 .9rem "Work Sans", sans-serif; color: var(--muted); }
 #bet-row b { color: var(--gold); font-variant-numeric: tabular-nums; }
-#clear-btn { font-size: .75rem; }
+#clear-btn, #pass-btn { font-size: .75rem; }
 
 button { background: var(--gold); color: #1a1405; border-radius: 999px; font-family: "Work Sans", sans-serif; font-weight: 700; letter-spacing: .06em; }
 button:disabled { opacity: .35; cursor: default; }

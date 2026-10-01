@@ -1,10 +1,12 @@
 (() => {
   "use strict";
 
-  const START_CHIPS = 1000;
-  const MIN_BET = 10;
+  // Chips carry over day to day (the bankroll is your long-term score).
+  const START_BANK = 100; // first-ever bankroll
+  const DAILY_ALLOWANCE = 10; // free chips each new day you play
+  const MIN_BET = 1;
   const ROUNDS = 7;
-  const STORAGE_KEY = "map-wager-v1";
+  const STORAGE_KEY = "map-wager-v2"; // v1 was the 1,000-chips-a-day version
   const EPOCH = "2026-09-30"; // day 0
   const EARTH_MI = 3958.8;
 
@@ -58,8 +60,14 @@
   // Bonus round: the last round pays double.
   const HOT_AFTER = 3, HOT_BONUS = 0.5;
   function streak() {
+    // Consecutive hits; passed rounds neither add to nor break a streak.
     let n = 0;
-    for (let i = game.results.length - 1; i >= 0 && game.results[i].hit; i--) n++;
+    for (let i = game.results.length - 1; i >= 0; i--) {
+      const r = game.results[i];
+      if (r.pass) continue;
+      if (!r.hit || r.practice) break;
+      n++;
+    }
     return n;
   }
   function payout(i) {
@@ -78,8 +86,17 @@
   const store = loadStore();
   store.days = store.days || {};
   const sig = places.map((p) => p.name).join("|");
-  const game = store.days[todayKey]?.sig === sig ? store.days[todayKey]
-    : (store.days[todayKey] = { sig, chips: START_CHIPS, results: [], done: false });
+  if (store.days[todayKey]?.sig !== sig) {
+    const first = store.bank === undefined;
+    if (first) store.bank = START_BANK;
+    // Daily allowance once per day (not again if today's places were changed mid-day).
+    const allowance = first || store.days[todayKey] ? 0 : DAILY_ALLOWANCE;
+    store.bank += allowance;
+    store.days[todayKey] = { sig, startBank: store.bank, allowance, results: [], done: false };
+  }
+  const game = store.days[todayKey];
+  store.peak = Math.max(store.peak || 0, store.bank);
+  const todayDelta = () => game.results.reduce((a, r) => a + (r.delta || 0), 0);
 
   // ---------- Geometry ----------
   const rad = (d) => (d * Math.PI) / 180;
@@ -184,14 +201,14 @@
     setData("links", []);
   }
 
+  // g is the guess, or null when the round was passed (just show the answer).
   function reveal(g, p) {
-    ripple(g);
-    addPin("guess", g);
-    addPin("answer", p, p.name, 500);
+    if (g) { ripple(g); addPin("guess", g); }
+    addPin("answer", p, p.name, g ? 500 : 0);
     setData("ring", [circle(p, p.r)]);
-    setData("links", [{ type: "Feature", geometry: { type: "LineString", coordinates: [[g.lon, g.lat], [p.lon, p.lat]] } }]);
+    if (g) setData("links", [{ type: "Feature", geometry: { type: "LineString", coordinates: [[g.lon, g.lat], [p.lon, p.lat]] } }]);
     // Frame the answer's circle and the guess.
-    const pts = [[g.lon, g.lat], ...circle(p, p.r, 16).geometry.coordinates[0]];
+    const pts = [...(g ? [[g.lon, g.lat]] : []), ...circle(p, p.r, 16).geometry.coordinates[0]];
     const lons = pts.map((c) => c[0]), lats = pts.map((c) => c[1]);
     const cam = map.cameraForBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], {
       padding: { top: Math.min(topPad(), map.getContainer().clientHeight * 0.55), bottom: 40, left: 40, right: 40 },
@@ -205,7 +222,24 @@
   let phase = "bet"; // bet (stack chips, then tap) → reveal
   const round = () => game.results.length;
   const place = () => places[Math.min(round(), ROUNDS - 1)];
-  const minBet = () => Math.min(MIN_BET, game.chips);
+  const broke = () => store.bank <= 0;
+
+  // Chip buttons scale with the bankroll: ~2%, 5%, 10%, 25%, rounded to 1-2-5 steps.
+  function nice(x) {
+    if (x < 1) return 1;
+    const p = 10 ** Math.floor(Math.log10(x));
+    const m = x / p;
+    return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p;
+  }
+  const short = (n) => (n >= 1e6 ? `${+(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${+(n / 1e3).toFixed(1)}K` : String(n));
+  function renderChips() {
+    const values = [...new Set([0.02, 0.05, 0.1, 0.25].map((f) => nice(store.bank * f)))].filter((v) => v < store.bank);
+    document.querySelectorAll("button.chip:not(.allin)").forEach((b, i) => {
+      const v = values[i];
+      b.style.display = v ? "" : "none";
+      if (v) { b.dataset.add = v; b.textContent = short(v); }
+    });
+  }
 
   function setAction(text, enabled, handler) {
     const b = $("action-btn");
@@ -216,16 +250,21 @@
   }
 
   function renderBank(delta) {
-    $("chips").textContent = fmt(game.chips);
+    $("chips").textContent = fmt(store.bank);
     const box = document.querySelector(".bank-chips");
     box.classList.remove("up", "down");
     if (delta) { void box.offsetWidth; box.classList.add(delta > 0 ? "up" : "down"); }
     $("round-label").textContent = `Round ${Math.min(round() + (phase === "reveal" ? 0 : 1), ROUNDS)} / ${ROUNDS}`;
-    $("cashout-btn").style.display = !game.done && round() > 0 && phase === "bet" ? "" : "none";
   }
 
   function renderBet() {
-    const p = place();
+    if (broke()) {
+      $("chip-buttons").style.display = "none";
+      $("bet-row").innerHTML = `<span>Out of chips: tap to play for fun · +${DAILY_ALLOWANCE} tomorrow</span>`;
+      $("result").textContent = "";
+      setAction("", false, null);
+      return;
+    }
     $("bet").textContent = fmt(bet);
     $("towin").textContent = fmt(bet * payout(round()).mult);
     $("result").textContent = bet > 0 ? "Tap the globe to play" : "";
@@ -246,6 +285,7 @@
       (pay.bonus ? ` <span class="tag bonus">⭐ ×2</span>` : "");
     $("betbox").style.display = "";
     $("result").textContent = "";
+    renderChips();
     renderBank();
     renderBet();
   }
@@ -253,43 +293,54 @@
   for (const b of document.querySelectorAll("button.chip")) {
     b.onclick = () => {
       if (phase !== "bet") return;
-      bet = b.dataset.add === "all" ? game.chips : Math.min(game.chips, bet + Number(b.dataset.add));
+      bet = b.dataset.add === "all" ? store.bank : Math.min(store.bank, bet + Number(b.dataset.add));
       renderBet();
     };
   }
   $("clear-btn").onclick = () => { bet = 0; renderBet(); };
+  $("pass-btn").onclick = () => { if (phase === "bet" && !game.done) resolve(null); };
 
   map.on("click", (e) => {
     if (game.done) return;
     if (phase === "reveal") { next(); return; }
     // Betting and tapping are one step: stack chips, then tap to play the round.
-    if (bet < minBet() || bet <= 0) { toast("Place your bet first"); return; }
+    if (!broke() && bet < MIN_BET) { toast("Place a bet, or Pass"); return; }
     resolve({ lon: e.lngLat.lng, lat: e.lngLat.lat });
   });
 
+  // g = the tapped point, or null to pass the round.
   function resolve(g) {
     const p = place();
-    const mi = distanceMi(g, p);
-    const hit = mi <= p.r;
     const pay = payout(round());
-    const delta = hit ? bet * pay.mult : -bet;
-    game.chips = Math.round(game.chips + delta);
-    game.results.push({ name: p.name, bet, hit, delta: Math.round(delta), mult: pay.mult, hot: pay.hot, bonus: pay.bonus,
-      mi: +mi.toFixed(1), lat: +g.lat.toFixed(4), lon: +g.lon.toFixed(4) });
+    const practice = broke();
+    let r;
+    if (!g) {
+      r = { name: p.name, pass: true, bet: 0, hit: false, delta: 0 };
+    } else {
+      const mi = distanceMi(g, p);
+      const hit = mi <= p.r;
+      const delta = practice ? 0 : Math.round(hit ? bet * pay.mult : -bet);
+      r = { name: p.name, bet: practice ? 0 : bet, hit, delta, practice, mult: pay.mult, hot: pay.hot, bonus: pay.bonus,
+        mi: +mi.toFixed(1), lat: +g.lat.toFixed(4), lon: +g.lon.toFixed(4) };
+    }
+    store.bank = Math.max(0, store.bank + r.delta);
+    store.peak = Math.max(store.peak || 0, store.bank);
+    game.results.push(r);
     phase = "reveal";
     $("betbox").style.display = "none";
     $("result").classList.remove("hint");
-    const over = game.chips <= 0 || round() >= ROUNDS;
-    if (over) finish(false);
+    const over = round() >= ROUNDS;
+    if (over) game.done = true;
     saveStore();
     reveal(g, p);
-    renderBank(delta);
-    $("prompt-label").textContent = hit ? "Hit!" : "Miss";
-    if (hit && streak() === HOT_AFTER && round() < ROUNDS) toast(`🔥 Hot streak! +${HOT_BONUS}× until you miss`);
-    $("result").innerHTML = (hit
-      ? `<span class="win">+${fmt(delta)}</span> · ${fmtDist(mi)} away`
-      : `<span class="lose">−${fmt(-delta)}</span> · ${fmtDist(mi)} away (line ${fmtLine(p.r)})`);
-    if (over) setAction(game.chips <= 0 ? "Busted · see results" : "See results", true, showOver);
+    renderBank(r.delta);
+    $("prompt-label").textContent = r.pass ? "Passed" : r.hit ? "Hit!" : "Miss";
+    if (r.hit && !practice && streak() === HOT_AFTER && round() < ROUNDS) toast(`🔥 Hot streak! +${HOT_BONUS}× until you miss`);
+    $("result").innerHTML = r.pass ? "No bet this round"
+      : practice ? `${r.hit ? "Hit" : "Miss"} (practice) · ${fmtDist(r.mi)} away`
+      : r.hit ? `<span class="win">+${fmt(r.delta)}</span> · ${fmtDist(r.mi)} away`
+      : `<span class="lose">−${fmt(-r.delta)}</span> · ${fmtDist(r.mi)} away (line ${fmtLine(p.r)})`;
+    if (over) setAction("See results", true, showOver);
     else setAction("Next place →", true, next);
   }
 
@@ -298,46 +349,30 @@
     startRound();
   }
 
-  $("cashout-btn").onclick = () => {
-    if (game.done || phase !== "bet") return;
-    finish(true);
-    saveStore();
-    renderBank();
-    showOver();
-  };
-
-  function finish(cashedOut) {
-    game.done = true;
-    game.cashedOut = cashedOut;
-  }
 
   // ---------- Results / stats / share ----------
+  const signed = (n) => `${n >= 0 ? "+" : "−"}${fmt(Math.abs(n))}`;
   function computeStats() {
     const days = Object.entries(store.days).filter(([, g]) => g.done);
-    const finals = days.map(([, g]) => g.chips);
+    const net = ([, g]) => g.results.reduce((a, r) => a + (r.delta || 0), 0);
     let streak = 0;
     const d = new Date();
     if (!store.days[dateKey(d)]?.done) d.setDate(d.getDate() - 1);
-    while (store.days[dateKey(d)]?.done && store.days[dateKey(d)].chips > START_CHIPS) { streak++; d.setDate(d.getDate() - 1); }
-    return {
-      played: days.length,
-      best: finals.length ? Math.max(...finals) : 0,
-      avg: finals.length ? Math.round(finals.reduce((a, b) => a + b, 0) / finals.length) : 0,
-      winning: finals.filter((c) => c > START_CHIPS).length,
-      streak
-    };
+    for (let g; (g = store.days[dateKey(d)])?.done && net([0, g]) > 0; d.setDate(d.getDate() - 1)) streak++;
+    return { bank: store.bank, peak: store.peak || store.bank, played: days.length, winning: days.filter((e) => net(e) > 0).length, streak };
   }
 
   function statsHTML(s) {
-    return `<div><b>${s.played}</b>played</div><div><b>${fmt(s.avg)}</b>average</div>` +
-      `<div><b>${fmt(s.best)}</b>best</div><div><b>${s.winning}</b>in profit</div><div><b>${s.streak}</b>streak</div>`;
+    return `<div><b>${fmt(s.bank)}</b>bankroll</div><div><b>${fmt(s.peak)}</b>peak</div><div><b>${s.played}</b>days</div>` +
+      `<div><b>${s.winning}</b>in profit</div><div><b>${s.streak}</b>streak</div>`;
   }
 
   function showOver() {
-    const up = game.chips - START_CHIPS;
-    $("over-title").textContent = game.chips <= 0 ? "Busted" : game.cashedOut ? "Cashed out" : "Final tally";
-    $("final-score").textContent = fmt(game.chips);
-    $("over-sub").textContent = `${up >= 0 ? "+" : "−"}${fmt(Math.abs(up))} chips · ${game.results.filter((r) => r.hit).length}/${game.results.length} hits`;
+    const d = todayDelta();
+    $("over-title").textContent = broke() ? "Out of chips" : "Day complete";
+    $("final-score").textContent = fmt(store.bank);
+    $("over-sub").textContent = `${signed(d)} today · ${game.results.filter((r) => r.hit && !r.practice).length}/` +
+      `${game.results.filter((r) => !r.pass && !r.practice).length} hits` + (broke() ? ` · +${DAILY_ALLOWANCE} chips tomorrow` : "");
     $("stats").innerHTML = statsHTML(computeStats());
     $("over").showModal();
   }
@@ -346,16 +381,15 @@
 
   function shareText() {
     const date = parseKey(todayKey).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-    const up = game.chips - START_CHIPS;
     // One line per round with the wager and what it won/lost (no place names, so no spoilers).
     const rounds = game.results.map((r, i) =>
-      `${i + 1}. ${r.hit ? "🟢" : "🔴"}${r.bonus ? "⭐" : ""}${r.hot ? "🔥" : ""} bet ${fmt(r.bet)} → ${r.delta >= 0 ? "+" : "−"}${fmt(Math.abs(r.delta))}`);
-    const ending = game.cashedOut ? `💰 cashed out after ${game.results.length}` : game.chips <= 0 ? "💥 busted" : null;
+      r.pass ? `${i + 1}. ⏭️ pass`
+      : r.practice ? `${i + 1}. ${r.hit ? "🟢" : "🔴"} practice`
+      : `${i + 1}. ${r.hit ? "🟢" : "🔴"}${r.bonus ? "⭐" : ""}${r.hot ? "🔥" : ""} bet ${fmt(r.bet)} → ${signed(r.delta)}`);
     return [
       `🎰 Map Wager · ${date}`,
       ...rounds,
-      ...(ending ? [ending] : []),
-      `${fmt(game.chips)} chips (${up >= 0 ? "+" : "−"}${fmt(Math.abs(up))})`,
+      `${signed(todayDelta())} today · bankroll ${fmt(store.bank)}`,
       "https://mapwager.com"
     ].join("\n");
   }
@@ -385,8 +419,8 @@
     if (game.done) {
       $("betbox").style.display = "none";
       $("prompt-label").textContent = "Today's table is closed";
-      $("prompt-name").textContent = `${fmt(game.chips)} chips`;
-      $("line").textContent = "New places at midnight";
+      $("prompt-name").textContent = `${fmt(store.bank)} chips`;
+      $("line").textContent = `New places and +${DAILY_ALLOWANCE} chips at midnight`;
       phase = "reveal";
       renderBank();
       setAction("Show results", true, showOver);
@@ -394,6 +428,10 @@
       return;
     }
     startRound();
+    if (game.allowance && !game.results.length && !game.allowanceShown) {
+      game.allowanceShown = true; saveStore();
+      toast(`+${DAILY_ALLOWANCE} daily chips`);
+    }
     if (!store.seenHelp) { store.seenHelp = true; saveStore(); $("help").showModal(); }
   });
 })();
