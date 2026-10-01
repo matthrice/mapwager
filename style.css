@@ -144,3 +144,5 @@ button.secondary { color: var(--muted); background: none; }
 .tag.hot { background: #e2552b; color: #fff; }
 .tag.bonus { background: var(--gold); color: #1a1405; }
 @media (max-width: 600px) { .tag { font-size: .65rem; padding: 0 5px; } }
+
+#bet-row .min { color: var(--muted); font-size: .8em; }

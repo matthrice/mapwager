@@ -4,7 +4,7 @@
   // Chips carry over day to day (the bankroll is your long-term score).
   const START_BANK = 100; // first-ever bankroll
   const DAILY_ALLOWANCE = 10; // free chips each new day you play
-  const MIN_BET = 1;
+  const MIN_BET_SHARE = 0.02; // minimum bet ≈ 2% of the bankroll (the smallest chip)
   const ROUNDS = 7;
   const STORAGE_KEY = "map-wager-v2"; // v1 was the 1,000-chips-a-day version
   const EPOCH = "2026-09-30"; // day 0
@@ -231,9 +231,11 @@
     const m = x / p;
     return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p;
   }
+  // Minimum bet scales with the bankroll: ~2%, rounded like the chips, at least 1, at most what you have.
+  const minBet = () => Math.min(store.bank, nice(store.bank * MIN_BET_SHARE));
   const short = (n) => (n >= 1e6 ? `${+(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${+(n / 1e3).toFixed(1)}K` : String(n));
   function renderChips() {
-    const values = [...new Set([0.02, 0.05, 0.1, 0.25].map((f) => nice(store.bank * f)))].filter((v) => v < store.bank);
+    const values = [...new Set([MIN_BET_SHARE, 0.05, 0.1, 0.25].map((f) => nice(store.bank * f)))].filter((v) => v < store.bank);
     document.querySelectorAll("button.chip:not(.allin)").forEach((b, i) => {
       const v = values[i];
       b.style.display = v ? "" : "none";
@@ -266,6 +268,7 @@
       return;
     }
     $("bet").textContent = fmt(bet);
+    $("minbet").textContent = fmt(minBet());
     $("towin").textContent = fmt(bet * payout(round()).mult);
     $("result").textContent = bet > 0 ? "Tap the globe to play" : "";
     $("result").classList.toggle("hint", bet > 0);
@@ -274,7 +277,7 @@
 
   function startRound() {
     phase = "bet";
-    bet = 0;
+    bet = broke() ? 0 : minBet(); // the minimum bet is always on; chips only add to it
     clearMarks();
     const p = place();
     $("prompt-name").textContent = p.name;
@@ -297,14 +300,14 @@
       renderBet();
     };
   }
-  $("clear-btn").onclick = () => { bet = 0; renderBet(); };
+  $("clear-btn").onclick = () => { bet = minBet(); renderBet(); };
   $("pass-btn").onclick = () => { if (phase === "bet" && !game.done) resolve(null); };
 
   map.on("click", (e) => {
     if (game.done) return;
     if (phase === "reveal") { next(); return; }
     // Betting and tapping are one step: stack chips, then tap to play the round.
-    if (!broke() && bet < MIN_BET) { toast("Place a bet, or Pass"); return; }
+    if (!broke() && bet < minBet()) bet = minBet(); // safety net; the minimum is pre-filled
     resolve({ lon: e.lngLat.lng, lat: e.lngLat.lat });
   });
 

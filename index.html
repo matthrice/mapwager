@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.css">
   <link rel="stylesheet" href="base.css?v=1">
   <link rel="stylesheet" href="pins.css?v=1">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
   <header>
@@ -48,7 +48,7 @@
             <button class="chip allin" data-add="all">All in</button>
           </div>
           <div id="bet-row">
-            <span>Bet <b id="bet">0</b> · win <b id="towin">0</b></span>
+            <span>Bet <b id="bet">0</b> · win <b id="towin">0</b> <small class="min">(min <span id="minbet">1</span>)</small></span>
             <button id="clear-btn" class="link-btn">Clear</button>
             <button id="pass-btn" class="link-btn">Pass</button>
           </div>
@@ -79,8 +79,8 @@
     <p>You start with <b>100 chips</b> and they <b>carry over</b> day to day. Your bankroll is your score,
       and you get <b>+10 free chips</b> each new day.</p>
     <p>Each day has <b>7 places</b>, the same for everyone. Each one sets a <b>line</b>: tap within that distance to win.
-      Stack chips, then tap the globe. Hit and you win your bet × the payout; miss and you lose it.
-      Don't know it? <b>Pass</b>. Chip sizes grow with your bankroll.</p>
+      Raise your bet if you like, then tap the globe. Hit and you win your bet × the payout; miss and you lose it.
+      Every round starts with the <b>minimum bet</b> (about 2% of your bankroll) on the line; tap chips to raise it, or <b>Pass</b> to skip.</p>
     <p>🔥 <b>Hot streak:</b> hit 3 in a row and your payouts get +0.5× until you miss.
       ⭐ <b>Bonus round:</b> the last place pays double.</p>
     <p>Drag to spin the globe, pinch or scroll to zoom. It's a terrain map with country borders: no labels or roads.</p>
@@ -92,6 +92,6 @@
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.js"></script>
   <script src="config.js?v=1"></script>
   <script src="places.js?v=2"></script>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>
