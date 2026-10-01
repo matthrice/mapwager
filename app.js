@@ -29,14 +29,44 @@
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
   }
-  const order = window.PLACES.map((_, i) => i);
-  const rand = mulberry32(20260930);
-  for (let i = order.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
-    [order[i], order[j]] = [order[j], order[i]];
+  function shuffled(n, seed) {
+    const order = Array.from({ length: n }, (_, i) => i);
+    const rand = mulberry32(seed);
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+    return order;
   }
-  const start = ((dayIndex * ROUNDS) % order.length + order.length) % order.length;
+  // Sep 30 and Oct 1 were played on the original 142-place pool; from Oct 2 the full pool
+  // gets a fresh shuffle. (Keeps those two days' places unchanged.)
+  const LEGACY_POOL = 142, LEGACY_DAYS = 2;
+  const legacy = dayIndex < LEGACY_DAYS;
+  function newOrder() {
+    // Places already played on the legacy days go to the back of the new rotation.
+    const old = shuffled(LEGACY_POOL, 20260930).slice(0, LEGACY_DAYS * ROUNDS);
+    const fresh = shuffled(window.PLACES.length, 20261002);
+    return [...fresh.filter((i) => !old.includes(i)), ...fresh.filter((i) => old.includes(i))];
+  }
+  const order = legacy ? shuffled(LEGACY_POOL, 20260930) : newOrder();
+  const slot = legacy ? dayIndex : dayIndex - LEGACY_DAYS;
+  const start = ((slot * ROUNDS) % order.length + order.length) % order.length;
   const places = Array.from({ length: ROUNDS }, (_, i) => window.PLACES[order[(start + i) % order.length]]);
+
+  // ---------- Payout modifiers ----------
+  // Hot streak: after 3 hits in a row, payouts get +0.5x until you miss.
+  // Bonus round: the last round pays double.
+  const HOT_AFTER = 3, HOT_BONUS = 0.5;
+  function streak() {
+    let n = 0;
+    for (let i = game.results.length - 1; i >= 0 && game.results[i].hit; i--) n++;
+    return n;
+  }
+  function payout(i) {
+    const hot = streak() >= HOT_AFTER;
+    const bonus = i === ROUNDS - 1;
+    return { hot, bonus, mult: (places[i].pays + (hot ? HOT_BONUS : 0)) * (bonus ? 2 : 1) };
+  }
 
   // ---------- Storage ----------
   function loadStore() {
@@ -197,7 +227,7 @@
   function renderBet() {
     const p = place();
     $("bet").textContent = fmt(bet);
-    $("towin").textContent = fmt(bet * p.pays);
+    $("towin").textContent = fmt(bet * payout(round()).mult);
     $("result").textContent = bet > 0 ? "Tap the globe to play" : "";
     $("result").classList.toggle("hint", bet > 0);
     setAction("", false, null);
@@ -208,9 +238,12 @@
     bet = 0;
     clearMarks();
     const p = place();
-    $("prompt-label").textContent = "Find";
     $("prompt-name").textContent = p.name;
-    $("line").innerHTML = `Within <b>${fmtLine(p.r)}</b> · pays <b>${p.pays}×</b>`;
+    const pay = payout(round());
+    $("prompt-label").textContent = pay.bonus ? "Bonus round · find" : "Find";
+    $("line").innerHTML = `Within <b>${fmtLine(p.r)}</b> · pays <b>${+pay.mult.toFixed(2)}×</b>` +
+      (pay.hot ? ` <span class="tag hot">🔥 +${HOT_BONUS}×</span>` : "") +
+      (pay.bonus ? ` <span class="tag bonus">⭐ ×2</span>` : "");
     $("betbox").style.display = "";
     $("result").textContent = "";
     renderBank();
@@ -238,9 +271,11 @@
     const p = place();
     const mi = distanceMi(g, p);
     const hit = mi <= p.r;
-    const delta = hit ? bet * p.pays : -bet;
+    const pay = payout(round());
+    const delta = hit ? bet * pay.mult : -bet;
     game.chips = Math.round(game.chips + delta);
-    game.results.push({ name: p.name, bet, hit, delta: Math.round(delta), mi: +mi.toFixed(1), lat: +g.lat.toFixed(4), lon: +g.lon.toFixed(4) });
+    game.results.push({ name: p.name, bet, hit, delta: Math.round(delta), mult: pay.mult, hot: pay.hot, bonus: pay.bonus,
+      mi: +mi.toFixed(1), lat: +g.lat.toFixed(4), lon: +g.lon.toFixed(4) });
     phase = "reveal";
     $("betbox").style.display = "none";
     $("result").classList.remove("hint");
@@ -250,6 +285,7 @@
     reveal(g, p);
     renderBank(delta);
     $("prompt-label").textContent = hit ? "Hit!" : "Miss";
+    if (hit && streak() === HOT_AFTER && round() < ROUNDS) toast(`🔥 Hot streak! +${HOT_BONUS}× until you miss`);
     $("result").innerHTML = (hit
       ? `<span class="win">+${fmt(delta)}</span> · ${fmtDist(mi)} away`
       : `<span class="lose">−${fmt(-delta)}</span> · ${fmtDist(mi)} away (line ${fmtLine(p.r)})`);
@@ -313,7 +349,7 @@
     const up = game.chips - START_CHIPS;
     // One line per round with the wager and what it won/lost (no place names, so no spoilers).
     const rounds = game.results.map((r, i) =>
-      `${i + 1}. ${r.hit ? "🟢" : "🔴"} bet ${fmt(r.bet)} → ${r.delta >= 0 ? "+" : "−"}${fmt(Math.abs(r.delta))}`);
+      `${i + 1}. ${r.hit ? "🟢" : "🔴"}${r.bonus ? "⭐" : ""}${r.hot ? "🔥" : ""} bet ${fmt(r.bet)} → ${r.delta >= 0 ? "+" : "−"}${fmt(Math.abs(r.delta))}`);
     const ending = game.cashedOut ? `💰 cashed out after ${game.results.length}` : game.chips <= 0 ? "💥 busted" : null;
     return [
       `🎰 Map Wager · ${date}`,

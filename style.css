@@ -138,3 +138,9 @@ button.secondary { color: var(--muted); background: none; }
   #result.hint { display: none; } /* the bet row already says what's on the line */
   #action-btn { padding: 8px 20px; font-size: .9rem; min-width: 160px; }
 }
+
+/* payout modifier tags on the line */
+.tag { display: inline-block; font: 700 .75rem "Work Sans", sans-serif; padding: 1px 7px; border-radius: 999px; margin-left: 2px; vertical-align: 1px; }
+.tag.hot { background: #e2552b; color: #fff; }
+.tag.bonus { background: var(--gold); color: #1a1405; }
+@media (max-width: 600px) { .tag { font-size: .65rem; padding: 0 5px; } }
